@@ -42,11 +42,11 @@ This is a bare-bones real-time chat application built with Node.js and Socket.IO
 
 1. **Install dependencies:**
    ```bash
-   npm install
+   pnpm install
    ```
 2. **Start the server:**
    ```bash
-   npm run devStart
+   pnpm devStart
    ```
 3. **Open the app:**
    - Open `index.html` in your browser (ensure the server is running on `localhost:3000`).
