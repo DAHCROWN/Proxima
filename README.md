@@ -59,3 +59,8 @@ send competing offers.
 - `pnpm db:seed` — sample rooms and messages
 
 pnpm is required (`packageManager` is pinned; npm and yarn installs are blocked).
+
+## Project notes
+
+- [TODO.md](TODO.md) — what's next
+- [CHANGELOG.md](CHANGELOG.md) — what shipped
