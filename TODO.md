@@ -34,6 +34,5 @@ Working list. Move items to [CHANGELOG.md](CHANGELOG.md) when they ship.
 - [ ] Fix pre-existing type errors (`app/api/rooms/[id]/leave/route.ts`, `src/db/seed.ts`)
       and remove `typescript.ignoreBuildErrors` from `next.config.mjs`
 - [ ] Remove unused `/api/rooms/[id]/join` and `/leave` routes, or use them
-- [ ] Drop `WS_PORT` from `.env` (no longer read)
 - [ ] Mesh voice scales poorly past ~6 people; consider an SFU if rooms grow
 - [ ] Add tests for the socket server (rooms, members, signalling relay)

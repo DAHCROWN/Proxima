@@ -5,6 +5,15 @@ Notable changes to Proxima. Newest first. Format loosely follows
 
 ## [Unreleased]
 
+### Added
+- `CLAUDE.md` with working agreements and testing notes for agent sessions.
+- `.claude/launch.json` preview config.
+- `NO_TLS=1` forces plain HTTP even when `certs/` exists.
+
+### Fixed
+- Next no longer picks the home directory as the workspace root
+  (`turbopack.root`).
+
 ## 2026-10-05
 
 ### Added

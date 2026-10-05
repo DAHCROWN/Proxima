@@ -18,7 +18,9 @@ const host = process.env.HOST || "0.0.0.0";
 // clients need TLS. `pnpm cert` writes a self-signed pair to certs/.
 const keyPath = "certs/key.pem";
 const certPath = "certs/cert.pem";
-const tls = existsSync(keyPath) && existsSync(certPath);
+// NO_TLS=1 forces plain HTTP (e.g. for tooling that can't trust the cert).
+const tls =
+	!process.env.NO_TLS && existsSync(keyPath) && existsSync(certPath);
 
 const app = next({ dev, hostname: host, port });
 const handle = app.getRequestHandler();
@@ -50,7 +52,9 @@ async function main() {
 		for (const url of lan) console.log(`> On your network: ${url}`);
 		if (!tls) {
 			console.log(
-				"> No certs found — voice works on localhost only. Run `pnpm cert` for LAN calls.",
+				process.env.NO_TLS
+					? "> HTTPS disabled (NO_TLS) — voice works on localhost only."
+					: "> No certs found — voice works on localhost only. Run `pnpm cert` for LAN calls.",
 			);
 		}
 	});
