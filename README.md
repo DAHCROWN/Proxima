@@ -1,67 +1,103 @@
-# Realtime Simple Chat App
+# Local Chat Rooms – Realtime Simple Chat App (Next.js + WebSockets)
 
-This is a bare-bones real-time chat application built with Node.js and Socket.IO. It provides a minimal example of how to implement a live chat system with a simple frontend and backend.
+## Overview
+
+This is a Next.js/TypeScript enhancement of the original Realtime Simple Chat App. It supports multiple dynamic chat rooms, real WebSocket connections, persistent chat data, and a modern UI built with React and Radix UI.
+
+---
 
 ## Features
-
-- Real-time messaging between users
+- Create, join, and chat in multiple rooms
+- Real-time messages over WebSocket (socket.io)
+- Persistent storage via Drizzle ORM, SQLite
 - User join/leave notifications
-- Minimal UI for demonstration purposes
+- Modern, minimal UI
+- Room and message management on backend
+
+---
 
 ## Project Structure
-
 ```
-/Realtime-Simple-Chat-App-master
-├── index.html        # Frontend HTML and inline CSS
-├── script.js         # Frontend JavaScript (handles chat logic)
-├── server.js         # Backend Node.js server using Socket.IO
-├── package.json      # Project metadata and dependencies
-├── package-lock.json # Dependency lock file
+local-chat-rooms/
+├── app/                 # Next.js application (pages, API routes)
+│   ├── api/             # API endpoints for rooms
+│   ├── layout.tsx       # Global layout (UI, fonts)
+│   └── page.tsx         # Main page UI, routing state
+├── components/          # React components (RoomDiscovery, JoinRoom, ChatInterface, UI library)
+├── lib/                 # RoomManager logic and API utilities
+├── src/ws/              # WebSocket server (server.ts) and socket utils
+├── src/db/              # Database schema and connection (Drizzle ORM, SQLite)
+├── public/              # Static assets and placeholder images
+├── styles/              # Global CSS (Tailwind, etc.)
+├── package.json         # Project config, dependencies, scripts
+├── pnpm-lock.yaml       # pnpm lockfile
+└── ...
 ```
 
-## How It Works
+---
 
-### Backend (`server.js`)
+## Main Components
+- **Frontend** (Next.js, React)
+  - `app/page.tsx` – Main UI logic: state, navigation between discovery, join, and chat
+  - `components/room-discovery.tsx` – Room list, discover and select rooms
+  - `components/join-room.tsx` – Input to join under a username
+  - `components/chat-interface.tsx` – Actual chat UI, message display & input
+  - `components/ui/` – Radix-based UI elements
+- **Backend**
+  - `src/ws/server.ts` – WebSocket server (socket.io), runs with `pnpm ws` for real-time events
+  - `lib/room-manager.ts` – Chat room and message handlers (uses Drizzle ORM to SQLite)
+  - `src/db/schema.ts` – Database schema
 
-- Starts a Socket.IO server on port 3000.
-- Maintains a list of connected users.
-- Listens for:
-  - `new-user`: Registers a new user and notifies others.
-  - `send-chat-message`: Broadcasts chat messages to all users except the sender.
-  - `disconnect`: Notifies others when a user leaves.
+---
 
-### Frontend (`index.html` & `script.js`)
-
-- Connects to the Socket.IO server.
-- Prompts the user for their name.
-- Displays chat messages and user connection/disconnection events.
-- Allows users to send messages via a form.
-- Uses basic inline CSS for layout.
-
-## Getting Started
+## Setup & Development
 
 1. **Install dependencies:**
-   ```bash
+   ```sh
    pnpm install
    ```
-2. **Start the server:**
-   ```bash
-   pnpm devStart
+
+2. **Set up environment:**
+    - Ensure SQLite DB or set the correct DB connection in `.env`
+
+3. **Database (optional, for seed data):**
+   ```sh
+   pnpm db:seed
    ```
-3. **Open the app:**
-   - Open `index.html` in your browser (ensure the server is running on `localhost:3000`).
+
+4. **Run Next.js frontend:**
+   ```sh
+   pnpm dev
+   ```
+
+5. **Start WebSocket server:** (**Required for chat functionality**)
+   ```sh
+   pnpm ws
+   ```
+   This runs `tsx watch src/ws/server.ts`. Make sure your `.env` sets the correct `WS_PORT` (default: 3001) and that you don't have port conflicts.
+
+6. **Access the app:**
+   - Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## Scripts
+- `pnpm dev` – Starts Next.js UI in dev mode
+- `pnpm ws` – Starts/reloads the websocket server (`src/ws/server.ts`)
+- `pnpm db:seed` – Seeds the database with sample chat rooms/messages/users (see `src/db/seed.ts`)
+
+---
 
 ## Dependencies
+- Next.js, React, TypeScript, Tailwind CSS
+- @radix-ui components for accessible UI
+- socket.io, socket.io-client
+- Drizzle ORM, SQLite, dotenv
+- tsx (for TypeScript node server)
 
-- [socket.io](https://socket.io/) (server-side)
-- [nodemon](https://nodemon.io/) (development only)
+---
 
-## Future Plans
-
-- **UI Improvements:**
-  - Enhance the frontend design for a better user experience.
-- **React Rewrite:**
-  - Rebuild the frontend using React for maintainability and scalability.
-  - Prepare the codebase for deployment as a mobile app using React Native.
-  - Implement Image sharing
-  - Call over LAN
+## Additional Notes
+- For the legacy version, see files in the root directory (simple single-room demo with `index.html` and `server.js`).
+- The local-chat-rooms/ app is the advanced, multi-room, modernized implementation.
+- **Ensure to always run `pnpm ws` in parallel with the Next.js dev server for full functionality!**
