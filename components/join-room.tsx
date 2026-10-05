@@ -6,8 +6,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import "dotenv/config";
-import { io, Socket } from "socket.io-client";
 import { IRoom } from "@/lib/types";
 import { socket } from "@/src/ws/socket";
 

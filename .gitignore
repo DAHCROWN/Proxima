@@ -29,3 +29,6 @@ next-env.d.ts
 *.db
 
 .DS_Store
+
+# local TLS certs (pnpm cert)
+certs/

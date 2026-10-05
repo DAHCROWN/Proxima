@@ -119,9 +119,6 @@ importers:
       drizzle-orm:
         specifier: ^0.44.7
         version: 0.44.7(@libsql/client@0.15.15)
-      eiows:
-        specifier: ^8.2.0
-        version: 8.2.0
       embla-carousel-react:
         specifier: 8.5.1
         version: 8.5.1(react@19.2.0)
@@ -1875,11 +1872,6 @@ packages:
         optional: true
       sqlite3:
         optional: true
-
-  eiows@8.2.0:
-    resolution: {integrity: sha512-Hh5+vx06yI5pDHxapKMj8tkuTwYS12VQpkymR+jKu4VcP+Toq4WTWA+XfEFbmc0/iwRC3YZooQNNHp2klATLGg==}
-    engines: {node: '>=16 <25.0'}
-    os: ['!win32', linux, freebsd, darwin]
 
   electron-to-chromium@1.5.241:
     resolution: {integrity: sha512-ILMvKX/ZV5WIJzzdtuHg8xquk2y0BOGlFOxBVwTpbiXqWIH0hamG45ddU4R3PQ0gYu+xgo0vdHXHli9sHIGb4w==}
@@ -3779,8 +3771,6 @@ snapshots:
   drizzle-orm@0.44.7(@libsql/client@0.15.15):
     optionalDependencies:
       '@libsql/client': 0.15.15
-
-  eiows@8.2.0: {}
 
   electron-to-chromium@1.5.241: {}
 

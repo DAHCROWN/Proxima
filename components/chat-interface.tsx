@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Send, LogOut } from "lucide-react";
-import "dotenv/config";
 import { IMessage, IRoom } from "@/lib/types";
 import { socket } from "@/src/ws/socket";
+import type { ChatPayload, Member } from "@/src/ws/events";
+import VoicePanel from "@/components/voice-panel";
 import { v4 as uuidv4 } from "uuid";
 
 interface ChatSession {
@@ -31,6 +32,7 @@ export default function ChatInterface({
 	const [error, setError] = useState<string | null>(null);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const [isConnected, setIsConnected] = useState(socket.connected);
+	const [members, setMembers] = useState<Member[]>([]);
 
 	useEffect(() => {
 		function onConnect() {
@@ -40,7 +42,7 @@ export default function ChatInterface({
 			setIsConnected(false);
 		}
 
-		function onChatMessage(message: any) {
+		function onChatMessage(message: ChatPayload) {
 			console.log("New Message", message);
 			const newMessage: IMessage = {
 				id: message.id,
@@ -56,11 +58,13 @@ export default function ChatInterface({
 		socket.on("connect", onConnect);
 		socket.on("disconnect", onDisconnect);
 		socket.on("chat-message", onChatMessage);
+		socket.on("room-members", setMembers);
 
 		return () => {
 			socket.off("connect", onConnect);
 			socket.off("disconnect", onDisconnect);
 			socket.off("chat-message", onChatMessage);
+			socket.off("room-members", setMembers);
 		};
 	}, [session.room.id, session.room.name]);
 
@@ -73,9 +77,10 @@ export default function ChatInterface({
 		if (!inputValue.trim()) return;
 		try {
 			// console.log("User message", inputValue);
-			socket.emit("send-chat-message", inputValue);
+			const id = uuidv4();
+			socket.emit("send-chat-message", inputValue, id);
 			const newMessage: IMessage = {
-				id: uuidv4().toString(),
+				id,
 				createdAt: new Date().toISOString(),
 				roomId: session.room.id,
 				author: session.username,
@@ -101,12 +106,13 @@ export default function ChatInterface({
 							{session.room.name}
 						</h1>
 						<p className="text-sm text-muted-foreground">
-							Joined as {session.username}
+							Joined as {session.username} · {members.length} online
 						</p>
 					</div>
 					<Button
 						onClick={() => {
-							socket.off("disconnect");
+							socket.disconnect();
+							onLeave();
 						}}
 						variant="outline"
 						size="sm"
@@ -117,6 +123,8 @@ export default function ChatInterface({
 					</Button>
 				</div>
 			</div>
+
+			<VoicePanel members={members} />
 
 			{/* Messages Container */}
 			<div className="flex-1 overflow-y-auto px-6 py-4">

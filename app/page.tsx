@@ -5,7 +5,6 @@ import RoomDiscovery from "@/components/room-discovery";
 import JoinRoom from "@/components/join-room";
 import ChatInterface from "@/components/chat-interface";
 import { IRoom } from "@/lib/types";
-import { io } from "socket.io-client";
 
 type AppState = "discovery" | "join" | "chat";
 

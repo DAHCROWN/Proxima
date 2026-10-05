@@ -1,84 +1,97 @@
-const { Server } = require("socket.io");
-import "dotenv/config";
-// import eiows from "eiows";
+import type { Server as HttpServer } from "node:http";
+import { Server } from "socket.io";
+import type {
+	ClientToServerEvents,
+	Member,
+	ServerToClientEvents,
+} from "./events";
 
-async function main() {
-	try {
-		console.log("Starting Websocket Server...");
-		const io = new Server(process.env.WS_PORT, {
-			cors: {
-				origin: "http://localhost:3000",
-				methods: ["GET", "POST"],
-			},
-		});
-		console.log("Started Websocket Server !");
+// Everyone currently connected, keyed by socket id.
+const members = new Map<string, Member>();
 
-		io.on("connection", (socket) => {
-			console.log("New Connection: ", socket.id);
-			socket.on("new-user", (name: string, chatRoomId: number) => {
-				console.log(
-					`New User Joined. Name: ${name}, ChatRoomId: ${chatRoomId}`
-				);
-				const newUser: User = {
-					socketId: socket.id,
-					name: name,
-					chatRoomId: chatRoomId,
-				};
-				users.push(newUser);
-				socket.join(chatRoomId.toString());
-				socket.to(chatRoomId.toString()).emit("user-connected", name);
-			});
+const roomKey = (roomId: number) => `room:${roomId}`;
+const membersOf = (roomId: number) =>
+	[...members.values()].filter((m) => m.roomId === roomId);
 
-			socket.on("send-chat-message", (message: string, messageId: string) => {
-				const _user = getUserDetails(socket.id);
-				console.log(
-					`New Message from ${_user.name}, says ${message}, in chatRoom ${_user.chatRoomId}`
-				);
-				socket.to(_user.chatRoomId.toString()).emit("chat-message", {
-					message: message,
-					id: messageId,
-					roomId: _user.chatRoomId,
-					name: _user.name,
-					time: new Date().toISOString(),
-				});
-			});
+/**
+ * Attaches the chat + voice signalling server to the app's HTTP(S) server.
+ * Voice audio itself flows peer-to-peer over WebRTC; this only relays the
+ * offers, answers and ICE candidates needed to set those connections up.
+ */
+export function attachSocketServer(httpServer: HttpServer) {
+	const io = new Server<ClientToServerEvents, ServerToClientEvents>(
+		httpServer,
+		// Leave non-socket.io upgrades (Next's HMR) for Next to handle.
+		{ destroyUpgrade: false },
+	);
 
-			socket.on("disconnect", () => {
-				console.log(`User ${socket.id} disconnected`);
-				const _user = getUserDetails(socket.id);
+	const broadcastMembers = (roomId: number) =>
+		io.to(roomKey(roomId)).emit("room-members", membersOf(roomId));
 
-				socket
-					.to(_user.chatRoomId.toString())
-					.emit("user-disconnected", users[socket.id]);
-				delete users[socket.id];
-			});
-		});
-	} catch (error) {
-		console.error("Error starting WS server", error);
-	}
-}
-
-main();
-
-type User = {
-	chatRoomId: number;
-	socketId: string;
-	name: string;
-};
-const users: User[] = [];
-
-function getUserDetails(socketId: string): {
-	name: string;
-	chatRoomId: number;
-} {
-	const user = users.filter((user) => user.socketId === socketId);
-	if (user && user[0])
-		return {
-			name: user[0].name,
-			chatRoomId: user[0].chatRoomId,
+	io.on("connection", (socket) => {
+		const leaveVoice = (member: Member) => {
+			if (!member.inVoice) return;
+			member.inVoice = false;
+			socket.to(roomKey(member.roomId)).emit("voice:peer-left", socket.id);
 		};
-	return {
-		name: "unknown",
-		chatRoomId: 1,
-	};
+
+		socket.on("new-user", (name, roomId) => {
+			members.set(socket.id, { id: socket.id, name, roomId, inVoice: false });
+			socket.join(roomKey(roomId));
+			socket.to(roomKey(roomId)).emit("user-connected", name);
+			broadcastMembers(roomId);
+		});
+
+		socket.on("send-chat-message", (message, id) => {
+			const member = members.get(socket.id);
+			if (!member) return;
+			socket.to(roomKey(member.roomId)).emit("chat-message", {
+				id,
+				message,
+				roomId: member.roomId,
+				name: member.name,
+				time: new Date().toISOString(),
+			});
+		});
+
+		socket.on("voice:join", () => {
+			const member = members.get(socket.id);
+			if (!member || member.inVoice) return;
+			// The newcomer dials everyone already in the channel, so existing
+			// peers only ever answer — no offer collisions.
+			const peerIds = membersOf(member.roomId)
+				.filter((m) => m.inVoice)
+				.map((m) => m.id);
+			member.inVoice = true;
+			socket.emit("voice:peers", peerIds);
+			broadcastMembers(member.roomId);
+		});
+
+		socket.on("voice:leave", () => {
+			const member = members.get(socket.id);
+			if (!member) return;
+			leaveVoice(member);
+			broadcastMembers(member.roomId);
+		});
+
+		socket.on("voice:signal", ({ to, ...signal }) => {
+			const from = members.get(socket.id);
+			const target = members.get(to);
+			// Only relay between two voice members of the same room.
+			if (!from?.inVoice || !target?.inVoice) return;
+			if (from.roomId !== target.roomId) return;
+			io.to(to).emit("voice:signal", { ...signal, from: socket.id });
+		});
+
+		socket.on("disconnect", () => {
+			const member = members.get(socket.id);
+			if (!member) return;
+			leaveVoice(member);
+			members.delete(socket.id);
+			socket.to(roomKey(member.roomId)).emit("user-disconnected", member.name);
+			broadcastMembers(member.roomId);
+		});
+	});
+
+	return io;
 }
